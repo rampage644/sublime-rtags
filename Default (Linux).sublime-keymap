@@ -1,0 +1,4 @@
+[
+  {"keys": ["ctrl+shift+u"], "command": "rtags", "args": {"switch": "-R"} },
+  {"keys": ["f2"], "command": "rtags", "args": {"switch": "-F"} },
+]
