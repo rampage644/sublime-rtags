@@ -1,4 +1,6 @@
 [
-  {"keys": ["ctrl+shift+u"], "command": "rtags", "args": {"switch": "-R"} },
-  {"keys": ["f2"], "command": "rtags", "args": {"switch": "-F"} },
+  {"keys": ["ctrl+shift+u"], "command": "rtags_symbol_name", "args": {"switch": "-R"} },
+  {"keys": ["f2"], "command": "rtags_symbol_name", "args": {"switch": "-F"} },
+  {"keys": ["ctrl+shift+y"], "command": "rtags_location", "args": {"switch": "-r"} },
+  {"keys": ["f4"], "command": "rtags_location", "args": {"switch": "-f"} } 
 ]
