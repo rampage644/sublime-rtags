@@ -20,6 +20,9 @@ class RtagsBaseCommand(sublime_plugin.TextCommand):
       (file, line, _, usage) = re.findall(reg, item)[0]
       return [usage.strip(), "{}:{}".format(file.split('/')[-1], line)]
     items = list(map(out_to_items, items))
+    if len(items) == 1:
+      self.on_select(0)
+      return
     self.view.window().show_quick_panel(items, self.on_select)
 
   def on_select(self, res):
