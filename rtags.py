@@ -54,19 +54,29 @@ class RtagsCompleteListener(sublime_plugin.EventListener):
                              row+1, col+1)
   
   def on_query_completions(self, v, prefix, location):
-    switch = '-l'
+    switch = '-l' # rc's auto-complete switch
     self.view = v
+    # libcland does auto-complete _only_ at whitespace and punctuation chars
+    # so "rewind" location to that character
+    location = location[0] - len(prefix)
+    # We launch rc utility with both filename:line:col and filename:length
+    # because we're using modified file which is passed via stdin (see --unsaved-file
+    # switch)
+
     p = subprocess.Popen([BIN,
                          switch, 
-                         self._query(location[0]-len(prefix)), 
-                         '--silent-query',
+                         self._query(location), # filename:line:col
+                         '--silent-query', # no query logging
                          '--unsaved-file',
-                         '{}:{}'.format(v.file_name(), v.size()),
-                         '--synchronous-completions'],
+                         '{}:{}'.format(v.file_name(), v.size()), # filename:length
+                         '--synchronous-completions' # no async
+                         ],
                          stderr=subprocess.PIPE,
                          stdout=subprocess.PIPE,
                          stdin=subprocess.PIPE)
+    # TODO research encoding, get from sublime
     out, err = p.communicate(input=bytes(v.substr(sublime.Region(0, v.size())), "utf-8"))
     sugs = [(b' '.join(el.split()[1:-1]).decode('ascii'),
             '{}'.format(el.split()[0].decode('ascii'))) for el in out.splitlines()]
+    # inhibit every possible auto-completion 
     return sugs, sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS
