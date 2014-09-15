@@ -59,10 +59,13 @@ class RtagsCompleteListener(sublime_plugin.EventListener):
     # libcland does auto-complete _only_ at whitespace and punctuation chars
     # so "rewind" location to that character
     location = location[0] - len(prefix)
+    # do noting if called from not C/C++ code
+    if v.scope_name(location).split()[0] not in ('source.c++',
+                                       'source.c'):
+      return []
     # We launch rc utility with both filename:line:col and filename:length
     # because we're using modified file which is passed via stdin (see --unsaved-file
     # switch)
-
     p = subprocess.Popen([BIN,
                          switch, 
                          self._query(location), # filename:line:col
