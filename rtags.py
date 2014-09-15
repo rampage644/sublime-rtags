@@ -59,6 +59,14 @@ class RtagsCompleteListener(sublime_plugin.EventListener):
     row, col = self.view.rowcol(pos)
     return '{}:{}:{}'.format(self.view.file_name(),
                              row+1, col+1)
+
+  def on_post_save(self, v):
+    # run rc --check-reindex to reindex just saved files
+    p = subprocess.Popen([RC_PATH,
+                         '-x', 
+                         '--silent-query' # no query logging
+                         ])
+    
   
   def on_query_completions(self, v, prefix, location):
     switch = '-l' # rc's auto-complete switch
