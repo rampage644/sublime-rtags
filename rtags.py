@@ -74,9 +74,23 @@ class RtagsCompleteListener(sublime_plugin.EventListener):
                          stderr=subprocess.PIPE,
                          stdout=subprocess.PIPE,
                          stdin=subprocess.PIPE)
-    # TODO research encoding, get from sublime
+    # TODO research encoding, probably get from sublime
     out, err = p.communicate(input=bytes(v.substr(sublime.Region(0, v.size())), "utf-8"))
-    sugs = [(b' '.join(el.split()[1:-1]).decode('ascii'),
-            '{}'.format(el.split()[0].decode('ascii'))) for el in out.splitlines()]
+    sugs = []
+    for line in out.splitlines():
+      # line is like this 
+      # "process void process(CompletionThread::Request *request) CXXMethod"
+      # "reparseTime int reparseTime VarDecl"
+      # "dump String dump() CXXMethod"
+      # "request CompletionThread::Request * request ParmDecl"
+      # we want it to show as process()\tCXXMethod 
+      # 
+      # output is list of tuples: first tuple element is what we see in popup menu
+      # second is what inserted into file. '$0' is where to place cursor.
+      # TODO play with $1, ${2:int}, ${3:string} and so on
+      elements = line.decode('utf-8').split()
+      sugs.append(('{}\t{}'.format(' '.join(elements[1:-1]), elements[-1]),
+                   '{}$0'.format(elements[0])))
+
     # inhibit every possible auto-completion 
     return sugs, sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS
