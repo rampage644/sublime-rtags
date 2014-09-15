@@ -3,12 +3,19 @@ import sublime_plugin
 import subprocess
 import re
 
-BIN = '/home/ramp/mnt/git/rtags/build/bin/rc'
-# pth_sleep
+s = sublime.load_settings('sublime-rtags.sublime-settings')
+s.add_on_change('rc_path', update_settings)
+RC_PATH = s.get('rc_path', 'rc')
+
+def update_settings():
+  global RC_PATH
+  RC_PATH = s.get('rc_path', 'rc')
+
+
 reg = r'(\S+):(\d+):(\d+):(.*)'
 class RtagsBaseCommand(sublime_plugin.TextCommand):
   def run(self, edit, switch, *args, **kwargs):
-    p = subprocess.Popen([BIN,
+    p = subprocess.Popen([RC_PATH,
                          switch, 
                          self._query(*args, **kwargs), 
                          '--silent-query'],
@@ -66,7 +73,7 @@ class RtagsCompleteListener(sublime_plugin.EventListener):
     # We launch rc utility with both filename:line:col and filename:length
     # because we're using modified file which is passed via stdin (see --unsaved-file
     # switch)
-    p = subprocess.Popen([BIN,
+    p = subprocess.Popen([RC_PATH,
                          switch, 
                          self._query(location), # filename:line:col
                          '--silent-query', # no query logging
