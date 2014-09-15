@@ -45,3 +45,28 @@ class RtagsLocationCommand(RtagsBaseCommand):
     return '{}:{}:{}'.format(self.view.file_name(),
                              row+1, col+1)
     
+class RtagsCompleteListener(sublime_plugin.EventListener):
+  # TODO refactor
+  def _query(self, *args, **kwargs):
+    pos = args[0]
+    row, col = self.view.rowcol(pos)
+    return '{}:{}:{}'.format(self.view.file_name(),
+                             row+1, col+1)
+  
+  def on_query_completions(self, v, prefix, location):
+    switch = '-l'
+    self.view = v
+    p = subprocess.Popen([BIN,
+                         switch, 
+                         self._query(location[0]-len(prefix)), 
+                         '--silent-query',
+                         '--unsaved-file',
+                         '{}:{}'.format(v.file_name(), v.size()),
+                         '--synchronous-completions'],
+                         stderr=subprocess.PIPE,
+                         stdout=subprocess.PIPE,
+                         stdin=subprocess.PIPE)
+    out, err = p.communicate(input=bytes(v.substr(sublime.Region(0, v.size())), "utf-8"))
+    sugs = [(b' '.join(el.split()[1:-1]).decode('ascii'),
+            '{}'.format(el.split()[0].decode('ascii'))) for el in out.splitlines()]
+    return sugs, sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS
