@@ -20,7 +20,6 @@ def run_rc(switch, input=None, *args):
                          stderr=subprocess.PIPE,
                          stdout=subprocess.PIPE,
                          stdin=subprocess.PIPE)
-  print (' '.join(p.args))
   return p.communicate(input=input)
 
 def get_view_text(view):
