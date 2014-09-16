@@ -11,17 +11,27 @@ def update_settings():
 RC_PATH = s.get('rc_path', 'rc')
 s.add_on_change('rc_path', update_settings)
 
+
+def run_rc(switch, input=None, *args):
+  p = subprocess.Popen([RC_PATH,
+                         '--silent-query',
+                         switch,                         
+                         ] + list(args),
+                         stderr=subprocess.PIPE,
+                         stdout=subprocess.PIPE,
+                         stdin=subprocess.PIPE)
+  print (' '.join(p.args))
+  return p.communicate(input=input)
+
+def get_view_text(view):
+  return bytes(view.substr(sublime.Region(0, view.size())), "utf-8")
+
 reg = r'(\S+):(\d+):(\d+):(.*)'
 class RtagsBaseCommand(sublime_plugin.TextCommand):
   def run(self, edit, switch, *args, **kwargs):
     if self.view.is_dirty():
       self._reindex(self.view.file_name())
-    p = subprocess.Popen([RC_PATH,
-                         switch, 
-                         self._query(*args, **kwargs), 
-                         '--silent-query'],
-     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out, err = p.communicate()
+    out, err = run_rc(switch, None, self._query(*args, **kwargs))
     items = list(map(lambda x: x.decode('utf-8'), out.splitlines()))
     self.last_references = items
     def out_to_items(item):
@@ -34,17 +44,8 @@ class RtagsBaseCommand(sublime_plugin.TextCommand):
     self.view.window().show_quick_panel(items, self.on_select)
 
   def _reindex(self, filename):
-    p = subprocess.Popen([RC_PATH,
-                         '-V', # reindex
-                         filename,
-                         '--silent-query', # no query logging
-                         '--unsaved-file',
-                         '{}:{}'.format(filename, self.view.size()), # filename:length
-                         ],
-                         stderr=subprocess.PIPE,
-                         stdout=subprocess.PIPE,
-                         stdin=subprocess.PIPE)
-    out, err = p.communicate(input=bytes(self.view.substr(sublime.Region(0, self.view.size())), "utf-8"))
+    run_rc('-V', get_view_text(self.view), filename, 
+      '--unsaved-file', '{}:{}'.format(filename, self.view.size()))
 
   def on_select(self, res):
     if res == -1:
@@ -76,10 +77,7 @@ class RtagsCompleteListener(sublime_plugin.EventListener):
 
   def on_post_save(self, v):
     # run rc --check-reindex to reindex just saved files
-    p = subprocess.Popen([RC_PATH,
-                         '-x', 
-                         '--silent-query' # no query logging
-                         ])
+    run_rc('-x')
     
   
   def on_query_completions(self, v, prefix, location):
@@ -95,19 +93,12 @@ class RtagsCompleteListener(sublime_plugin.EventListener):
     # We launch rc utility with both filename:line:col and filename:length
     # because we're using modified file which is passed via stdin (see --unsaved-file
     # switch)
-    p = subprocess.Popen([RC_PATH,
-                         switch, 
-                         self._query(location), # filename:line:col
-                         '--silent-query', # no query logging
-                         '--unsaved-file',
-                         '{}:{}'.format(v.file_name(), v.size()), # filename:length
-                         '--synchronous-completions' # no async
-                         ],
-                         stderr=subprocess.PIPE,
-                         stdout=subprocess.PIPE,
-                         stdin=subprocess.PIPE)
-    # TODO research encoding, probably get from sublime
-    out, err = p.communicate(input=bytes(v.substr(sublime.Region(0, v.size())), "utf-8"))
+    out, err = run_rc(switch, get_view_text(self.view), 
+      self._query(location),
+      '--unsaved-file',
+      '{}:{}'.format(v.file_name(), v.size()), # filename:length
+      '--synchronous-completions' # no async)
+      )
     sugs = []
     for line in out.splitlines():
       # line is like this 
