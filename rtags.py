@@ -4,17 +4,18 @@ import subprocess
 import re
 
 s = sublime.load_settings('sublime-rtags.sublime-settings')
-s.add_on_change('rc_path', update_settings)
-RC_PATH = s.get('rc_path', 'rc')
-
 def update_settings():
   global RC_PATH
   RC_PATH = s.get('rc_path', 'rc')
 
+RC_PATH = s.get('rc_path', 'rc')
+s.add_on_change('rc_path', update_settings)
 
 reg = r'(\S+):(\d+):(\d+):(.*)'
 class RtagsBaseCommand(sublime_plugin.TextCommand):
   def run(self, edit, switch, *args, **kwargs):
+    if self.view.is_dirty():
+      self._reindex(self.view.file_name())
     p = subprocess.Popen([RC_PATH,
                          switch, 
                          self._query(*args, **kwargs), 
@@ -31,6 +32,19 @@ class RtagsBaseCommand(sublime_plugin.TextCommand):
       self.on_select(0)
       return
     self.view.window().show_quick_panel(items, self.on_select)
+
+  def _reindex(self, filename):
+    p = subprocess.Popen([RC_PATH,
+                         '-V', # reindex
+                         filename,
+                         '--silent-query', # no query logging
+                         '--unsaved-file',
+                         '{}:{}'.format(filename, self.view.size()), # filename:length
+                         ],
+                         stderr=subprocess.PIPE,
+                         stdout=subprocess.PIPE,
+                         stdin=subprocess.PIPE)
+    out, err = p.communicate(input=bytes(self.view.substr(sublime.Region(0, self.view.size())), "utf-8"))
 
   def on_select(self, res):
     if res == -1:
