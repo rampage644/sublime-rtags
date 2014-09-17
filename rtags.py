@@ -23,6 +23,7 @@ def run_rc(switch, input=None, *args):
                          stderr=subprocess.PIPE,
                          stdout=subprocess.PIPE,
                          stdin=subprocess.PIPE)
+  print (' '.join(p.args))
   return p.communicate(input=input)
 
 # TODO refactor somehow to remove global vars
@@ -35,15 +36,20 @@ class NavigationHelper(object):
     # navigation indicator, possible values are:
     # - NAVIGATION_REQUESTED
     # - NAVIGATION_DONE
-    self.flag = 0
+    self.flag = NavigationHelper.NAVIGATION_DONE
+    # flag is set when view has been modified
+    # TODO check for more elegant solution
+    self.is_modified = False
 
 navigation_helper = NavigationHelper()
 
 class RConnectionThread(threading.Thread):
   def notify(self):
     global navigation_helper
-    navigation_helper.flag = NAVIGATION_DONE
+    navigation_helper.flag = NavigationHelper.NAVIGATION_DONE
     # do navigation
+    print ('notify!')
+    # TODO this doesn't work
     sublime.run_command('rtags_location', {'switch': '-l'})
 
   def run(self):
@@ -83,10 +89,14 @@ class RConnectionThread(threading.Thread):
         # check if it is progress update
         if tree.tag == 'progress':
           # notify about event
+          print (tree.tag)
           self.notify()
         buffer = ''
         start_tag = ''
 
+thread = RConnectionThread()
+# TODO how do we stop it?
+thread.start()
 
 
 
@@ -96,9 +106,20 @@ def get_view_text(view):
 reg = r'(\S+):(\d+):(\d+):(.*)'
 class RtagsBaseCommand(sublime_plugin.TextCommand):
   def run(self, edit, switch, *args, **kwargs):
-    if self.view.is_dirty():
+    # check if file needs reindexing
+    global navigation_helper
+    if self.view.is_dirty() and navigation_helper.is_modified:
+      print ('request reindex')
+      # TODO check why it's requesting reindex for second, third.. time
       self._reindex(self.view.file_name())
+      navigation_helper.flag = NavigationHelper.NAVIGATION_REQUESTED
+
+    # only do navigation when navigation is done
+    if navigation_helper.flag != NavigationHelper.NAVIGATION_DONE:
+      return
+
     out, err = run_rc(switch, None, self._query(*args, **kwargs))
+    print (out, err)
     items = list(map(lambda x: x.decode('utf-8'), out.splitlines()))
     self.last_references = items
     def out_to_items(item):
@@ -133,6 +154,19 @@ class RtagsLocationCommand(RtagsBaseCommand):
     row, col = self.view.rowcol(self.view.sel()[0].a)
     return '{}:{}:{}'.format(self.view.file_name(),
                              row+1, col+1)
+
+class RtagsNavigationListener(sublime_plugin.EventListener):
+  def on_modified(self, view):
+    global navigation_helper
+    if view.scope_name(0).split()[0] in ('source.c++',
+                                                'source.c'):
+      navigation_helper.is_modified = True
+    
+  def on_post_save(self, v):
+    # run rc --check-reindex to reindex just saved files
+    run_rc('-x')
+    global navigation_helper
+    navigation_helper.is_modified = False
     
 class RtagsCompleteListener(sublime_plugin.EventListener):
   # TODO refactor
@@ -142,9 +176,6 @@ class RtagsCompleteListener(sublime_plugin.EventListener):
     return '{}:{}:{}'.format(self.view.file_name(),
                              row+1, col+1)
 
-  def on_post_save(self, v):
-    # run rc --check-reindex to reindex just saved files
-    run_rc('-x')
     
   
   def on_query_completions(self, v, prefix, location):
