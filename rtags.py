@@ -1,7 +1,10 @@
 import sublime
 import sublime_plugin
 import subprocess
+import threading
 import re
+
+import xml.etree.ElementTree as etree
 
 s = sublime.load_settings('sublime-rtags.sublime-settings')
 def update_settings():
@@ -21,6 +24,71 @@ def run_rc(switch, input=None, *args):
                          stdout=subprocess.PIPE,
                          stdin=subprocess.PIPE)
   return p.communicate(input=input)
+
+# TODO refactor somehow to remove global vars
+class NavigationHelper(object):
+  NAVIGATION_REQUESTED = 1
+  NAVIGATION_DONE = 2
+  def __init__(self):
+    # store navigation/references output here
+    self.data = []
+    # navigation indicator, possible values are:
+    # - NAVIGATION_REQUESTED
+    # - NAVIGATION_DONE
+    self.flag = 0
+
+navigation_helper = NavigationHelper()
+
+class RConnectionThread(threading.Thread):
+  def notify(self):
+    global navigation_helper
+    navigation_helper.flag = NAVIGATION_DONE
+    # do navigation
+    sublime.run_command('rtags_location', {'switch': '-l'})
+
+  def run(self):
+    p = subprocess.Popen([RC_PATH, '-m', '--silent-query'],
+      stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+    # `rc -m` will feed stdout with xml like this:
+    # 
+    # <?xml version="1.0" encoding="utf-8"?>
+    #  <checkstyle>
+    #   <file name="/home/ramp/tmp/pthread_simple.c">
+    #    <error line="54" column="5" severity="warning" message="implicit declaration of function 'sleep' is invalid in C99"/>
+    #    <error line="59" column="5" severity="warning" message="implicit declaration of function 'write' is invalid in C99"/>
+    #    <error line="60" column="5" severity="warning" message="implicit declaration of function 'lseek' is invalid in C99"/>
+    #    <error line="78" column="7" severity="warning" message="implicit declaration of function 'read' is invalid in C99"/>
+    #   </file>
+    #  </checkstyle>
+    # <?xml version="1.0" encoding="utf-8"?>
+    # <progress index="1" total="1"></progress>
+    # 
+    # So we need to split xml chunks somehow
+    # Will start by looking for opening tag (<checkstyle, <progress)
+    # and parse accumulated xml when we encounter closing tag 
+    # TODO deal with < /> style tags
+    rgxp = re.compile(r'<(\w+)')
+    buffer = '' # xml to be parsed
+    start_tag = ''
+    while True:
+      # read stdout line by line
+      line = p.stdout.readline().decode('utf-8')
+      if not start_tag:
+        start_tag = re.findall(rgxp, line)
+        start_tag = start_tag[0] if len(start_tag) else ''
+      buffer += line
+      if '</{}>'.format(start_tag) in line:
+        tree = etree.fromstring(buffer)
+        # OK, we received some chunk
+        # check if it is progress update
+        if tree.tag == 'progress':
+          # notify about event
+          self.notify()
+        buffer = ''
+        start_tag = ''
+
+
+
 
 def get_view_text(view):
   return bytes(view.substr(sublime.Region(0, view.size())), "utf-8")
