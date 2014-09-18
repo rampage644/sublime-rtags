@@ -32,7 +32,10 @@ class NavigationHelper(object):
     # - NAVIGATION_REQUESTED
     # - NAVIGATION_DONE
     self.flag = NavigationHelper.NAVIGATION_DONE
+    # rc utility switch to use for callback
     self.switch = ''
+    # file contents that has been passed to reindexer last time
+    self.data = ''
 
 class RConnectionThread(threading.Thread):
   def notify(self):
@@ -97,9 +100,15 @@ class RtagsBaseCommand(sublime_plugin.TextCommand):
     # file should be reindexed only when 
     # 1. file buffer is dirty (modified)
     # 2. there is no pending reindexation (navigation_helper flag)
-    if navigation_helper.flag == NavigationHelper.NAVIGATION_DONE and self.view.is_dirty():
+    # 3. current text is different from previous one
+    # It takes ~40-50 ms to reindex 2.5K C file and
+    # miserable amount of time to check text difference
+    if (navigation_helper.flag == NavigationHelper.NAVIGATION_DONE and 
+        self.view.is_dirty() and
+        navigation_helper.data != get_view_text(self.view)):
       navigation_helper.switch = switch
-      # we set up navigation flag in _reindex function
+      navigation_helper.data = get_view_text(self.view)
+      navigation_helper.flag = NavigationHelper.NAVIGATION_REQUESTED
       self._reindex(self.view.file_name())
       # never go further
       return
@@ -131,7 +140,6 @@ class RtagsBaseCommand(sublime_plugin.TextCommand):
     self.view.window().show_quick_panel(items, self.on_select)
 
   def _reindex(self, filename):
-    navigation_helper.flag = NavigationHelper.NAVIGATION_REQUESTED
     run_rc('-V', get_view_text(self.view), filename, 
       '--unsaved-file', '{}:{}'.format(filename, self.view.size()))
 
