@@ -28,24 +28,14 @@ class NavigationHelper(object):
   NAVIGATION_REQUESTED = 1
   NAVIGATION_DONE = 2
   def __init__(self):
-    # store navigation/references output here
-    self.data = []
     # navigation indicator, possible values are:
     # - NAVIGATION_REQUESTED
     # - NAVIGATION_DONE
     self.flag = NavigationHelper.NAVIGATION_DONE
-    # flag is set when view has been modified
-    # TODO check for more elegant solution
-    self.is_modified = False
-
 
 class RConnectionThread(threading.Thread):
   def notify(self):
-    navigation_helper.flag = NavigationHelper.NAVIGATION_DONE
-    # do navigation
-    print ('notify!')
-    # TODO this doesn't work
-    sublime.run_command('rtags_location', {'switch': '-l'})
+    sublime.active_window().active_view().run_command('rtags_location', {'switch':'-f'})
 
   def run(self):
     self.p = subprocess.Popen([RC_PATH, '-m', '--silent-query'],
@@ -85,7 +75,7 @@ class RConnectionThread(threading.Thread):
         if tree.tag == 'progress':
           # notify about event
           print (tree.tag)
-          self.notify()
+          sublime.set_timeout(self.notify, 10)
         buffer = ''
         start_tag = ''
 
@@ -102,31 +92,43 @@ def get_view_text(view):
 reg = r'(\S+):(\d+):(\d+):(.*)'
 class RtagsBaseCommand(sublime_plugin.TextCommand):
   def run(self, edit, switch, *args, **kwargs):
-    # check if file needs reindexing
-    if self.view.is_dirty() and navigation_helper.is_modified:
-      print ('request reindex')
-      # TODO check why it's requesting reindex for second, third.. time
+    # file should be reindexed only when 
+    # 1. file buffer is dirty (modified)
+    # 2. there is no pending reindexation (navigation_helper flag)
+    if navigation_helper.flag == NavigationHelper.NAVIGATION_DONE and self.view.is_dirty():
+      # we set up navigation flag in _reindex function
       self._reindex(self.view.file_name())
-      navigation_helper.flag = NavigationHelper.NAVIGATION_REQUESTED
-
-    # only do navigation when navigation is done
-    if navigation_helper.flag != NavigationHelper.NAVIGATION_DONE:
+      # never go further
       return
 
     out, err = run_rc(switch, None, self._query(*args, **kwargs))
-    print (out, err)
+    # dirty hack
+    # TODO figure out why rdm responds with 'Project loading'
+    # for now just repeat query
+    if out == b'Project loading\n':
+      out, err = run_rc(switch, None, self._query(*args, **kwargs))
+
+    # drop the flag, we are going to navigate
+    navigation_helper.flag = NavigationHelper.NAVIGATION_DONE
+
+    # pretty format the results
     items = list(map(lambda x: x.decode('utf-8'), out.splitlines()))
     self.last_references = items
     def out_to_items(item):
       (file, line, _, usage) = re.findall(reg, item)[0]
       return [usage.strip(), "{}:{}".format(file.split('/')[-1], line)]
     items = list(map(out_to_items, items))
+
+    # if there is only one result no need to show it to user
+    # just do navigation directly
     if len(items) == 1:
       self.on_select(0)
       return
+    # else show all available options
     self.view.window().show_quick_panel(items, self.on_select)
 
   def _reindex(self, filename):
+    navigation_helper.flag = NavigationHelper.NAVIGATION_REQUESTED
     run_rc('-V', get_view_text(self.view), filename, 
       '--unsaved-file', '{}:{}'.format(filename, self.view.size()))
 
@@ -151,15 +153,14 @@ class RtagsLocationCommand(RtagsBaseCommand):
                              row+1, col+1)
 
 class RtagsNavigationListener(sublime_plugin.EventListener):
-  def on_modified(self, view):
-    if view.scope_name(0).split()[0] in ('source.c++',
-                                                'source.c'):
-      navigation_helper.is_modified = True
+  # def on_modified(self, view):
+  #   if view.scope_name(0).split()[0] in ('source.c++',
+  #                                               'source.c'):
+  #     navigation_helper.flag = 
     
   def on_post_save(self, v):
     # run rc --check-reindex to reindex just saved files
     run_rc('-x')
-    navigation_helper.is_modified = False
     
 class RtagsCompleteListener(sublime_plugin.EventListener):
   # TODO refactor
