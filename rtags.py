@@ -32,10 +32,12 @@ class NavigationHelper(object):
     # - NAVIGATION_REQUESTED
     # - NAVIGATION_DONE
     self.flag = NavigationHelper.NAVIGATION_DONE
+    self.switch = ''
 
 class RConnectionThread(threading.Thread):
   def notify(self):
-    sublime.active_window().active_view().run_command('rtags_location', {'switch':'-f'})
+    sublime.active_window().active_view().run_command('rtags_location', 
+      {'switch': navigation_helper.switch})
 
   def run(self):
     self.p = subprocess.Popen([RC_PATH, '-m', '--silent-query'],
@@ -96,6 +98,7 @@ class RtagsBaseCommand(sublime_plugin.TextCommand):
     # 1. file buffer is dirty (modified)
     # 2. there is no pending reindexation (navigation_helper flag)
     if navigation_helper.flag == NavigationHelper.NAVIGATION_DONE and self.view.is_dirty():
+      navigation_helper.switch = switch
       # we set up navigation flag in _reindex function
       self._reindex(self.view.file_name())
       # never go further
