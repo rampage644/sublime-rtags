@@ -41,7 +41,6 @@ class NavigationHelper(object):
 
 class RConnectionThread(threading.Thread):
   def notify(self):
-    global navigation_helper
     navigation_helper.flag = NavigationHelper.NAVIGATION_DONE
     # do navigation
     print ('notify!')
@@ -95,11 +94,11 @@ class RConnectionThread(threading.Thread):
 def get_view_text(view):
   return bytes(view.substr(sublime.Region(0, view.size())), "utf-8")
 
+
 reg = r'(\S+):(\d+):(\d+):(.*)'
 class RtagsBaseCommand(sublime_plugin.TextCommand):
   def run(self, edit, switch, *args, **kwargs):
     # check if file needs reindexing
-    global navigation_helper
     if self.view.is_dirty() and navigation_helper.is_modified:
       print ('request reindex')
       # TODO check why it's requesting reindex for second, third.. time
@@ -149,7 +148,6 @@ class RtagsLocationCommand(RtagsBaseCommand):
 
 class RtagsNavigationListener(sublime_plugin.EventListener):
   def on_modified(self, view):
-    global navigation_helper
     if view.scope_name(0).split()[0] in ('source.c++',
                                                 'source.c'):
       navigation_helper.is_modified = True
@@ -157,7 +155,6 @@ class RtagsNavigationListener(sublime_plugin.EventListener):
   def on_post_save(self, v):
     # run rc --check-reindex to reindex just saved files
     run_rc('-x')
-    global navigation_helper
     navigation_helper.is_modified = False
     
 class RtagsCompleteListener(sublime_plugin.EventListener):
