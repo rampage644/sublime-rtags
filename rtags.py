@@ -48,7 +48,7 @@ class RConnectionThread(threading.Thread):
     sublime.run_command('rtags_location', {'switch': '-l'})
 
   def run(self):
-    p = subprocess.Popen([RC_PATH, '-m', '--silent-query'],
+    self.p = subprocess.Popen([RC_PATH, '-m', '--silent-query'],
       stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     # `rc -m` will feed stdout with xml like this:
     # 
@@ -73,7 +73,7 @@ class RConnectionThread(threading.Thread):
     start_tag = ''
     while True:
       # read stdout line by line
-      line = p.stdout.readline().decode('utf-8')
+      line = self.p.stdout.readline().decode('utf-8')
       if not start_tag:
         start_tag = re.findall(rgxp, line)
         start_tag = start_tag[0] if len(start_tag) else ''
@@ -88,6 +88,10 @@ class RConnectionThread(threading.Thread):
           self.notify()
         buffer = ''
         start_tag = ''
+
+  def stop(self):
+    self.p.kill()
+    self.p = None
 
 
 
@@ -214,10 +218,13 @@ def init():
   update_settings()
 
   globals()['navigation_helper'] = NavigationHelper()
-  thread = RConnectionThread()
-  # TODO how do we stop it?
-  thread.start()
+  globals()['rc_thread'] = RConnectionThread()
+  rc_thread.start()
   settings.add_on_change('rc_path', update_settings)
 
 def plugin_loaded():
   sublime.set_timeout(init, 200)
+
+def plugin_unloaded():
+  # stop `rc -m` thread
+  sublime.set_timeout(rc_thread.stop, 100)
