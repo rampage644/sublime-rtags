@@ -6,13 +6,10 @@ import re
 
 import xml.etree.ElementTree as etree
 
-s = sublime.load_settings('sublime-rtags.sublime-settings')
-def update_settings():
-  global RC_PATH
-  RC_PATH = s.get('rc_path', 'rc')
-
-RC_PATH = s.get('rc_path', 'rc')
-s.add_on_change('rc_path', update_settings)
+# sublime-rtags settings
+settings = None
+# path to rc utility
+RC_PATH = ''
 
 
 def run_rc(switch, input=None, *args):
@@ -41,7 +38,6 @@ class NavigationHelper(object):
     # TODO check for more elegant solution
     self.is_modified = False
 
-navigation_helper = NavigationHelper()
 
 class RConnectionThread(threading.Thread):
   def notify(self):
@@ -93,10 +89,6 @@ class RConnectionThread(threading.Thread):
           self.notify()
         buffer = ''
         start_tag = ''
-
-thread = RConnectionThread()
-# TODO how do we stop it?
-thread.start()
 
 
 
@@ -215,3 +207,20 @@ class RtagsCompleteListener(sublime_plugin.EventListener):
 
     # inhibit every possible auto-completion 
     return sugs, sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS
+
+
+def update_settings():
+  globals()['settings'] = sublime.load_settings('sublime-rtags.sublime-settings')
+  globals()['RC_PATH'] = settings.get('rc_path', 'rc')
+
+def init():
+  update_settings()
+
+  globals()['navigation_helper'] = NavigationHelper()
+  thread = RConnectionThread()
+  # TODO how do we stop it?
+  thread.start()
+  settings.add_on_change('rc_path', update_settings)
+
+def plugin_loaded():
+  sublime.set_timeout(init, 200)
