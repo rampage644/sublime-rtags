@@ -44,7 +44,7 @@ class RConnectionThread(threading.Thread):
 
   def run(self):
     self.p = subprocess.Popen([RC_PATH, '-m', '--silent-query'],
-      stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+      stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
     # `rc -m` will feed stdout with xml like this:
     # 
     # <?xml version="1.0" encoding="utf-8"?>
@@ -66,9 +66,9 @@ class RConnectionThread(threading.Thread):
     rgxp = re.compile(r'<(\w+)')
     buffer = '' # xml to be parsed
     start_tag = ''
-    while True:
-      # read stdout line by line
-      line = self.p.stdout.readline().decode('utf-8')
+    for line in iter(self.p.stdout.readline, b''):
+      line = line.decode('utf-8')
+      self.p.poll()
       if not start_tag:
         start_tag = re.findall(rgxp, line)
         start_tag = start_tag[0] if len(start_tag) else ''
@@ -83,6 +83,7 @@ class RConnectionThread(threading.Thread):
           sublime.set_timeout(self.notify, 10)
         buffer = ''
         start_tag = ''
+    self.p = None
 
   def stop(self):
     self.p.kill()
