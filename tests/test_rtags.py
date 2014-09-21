@@ -29,6 +29,7 @@ class FooTest(unittest.TestCase):
     self.foo_cxx_view = sublime.active_window().open_file(FOO_CXX)
     wait(self.foo_cxx_view)
     wait(self.foo_h_view)
+    
   def tearDown(self):
     self.foo_h_view.close()
     self.foo_cxx_view.close()
@@ -52,8 +53,6 @@ class FooTest(unittest.TestCase):
     s = self.foo_cxx_view.sel()
     tp = self.foo_cxx_view.text_point(25, 0)
     self.assertEquals(s[0].a, tp)
-
-
 
   def test_complete(self):
     tp = self.foo_cxx_view.text_point(9, 0)
