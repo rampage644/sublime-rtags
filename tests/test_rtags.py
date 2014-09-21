@@ -70,6 +70,23 @@ class FooTest(unittest.TestCase):
         ['method3', 'method1', 'method2', 'method4', 'var1', 'var2', 'var4', 'var5'])
     self.foo_cxx_view.run_command('undo')
 
+class FooTestUnsaved(FooTest):
+  def setUp(self):
+    subprocess.call(['rc', '-c',
+                     'g++', FOO_CXX])
+    self.foo_h_view = sublime.active_window().open_file(FOO_H)
+    self.foo_cxx_view = sublime.active_window().open_file(FOO_CXX)
+    wait(self.foo_cxx_view)
+    wait(self.foo_h_view)
+    # insert 4 empty lines
+    self.foo_cxx_view.run_command('insert', {'characters': '\n' * 4})
+
+  def tearDown(self):
+    # pass
+    self.foo_cxx_view.run_command('undo')
+    self.foo_h_view.run_command('undo')
+    self.foo_h_view.close()
+    self.foo_cxx_view.close()
 
 
 
