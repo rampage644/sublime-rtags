@@ -49,6 +49,7 @@ Keybindings inspired by `Qt Creator`.
 
 + Symbol navigation - `F2`
 + Find usages - `Ctrl+Shift+u`
++ Use `Alt+/` explicitly when you auto-completion
 
 # Customization
 
@@ -77,3 +78,14 @@ Customize settings via "Preferences - Package Settings - SublimeRtags - Settings
 }
 ```
 
+If you need auto-completion to trigger upon `.`, `->` or `::` add following to "Preferences - Settings - User"
+
+```
+  "auto_complete_triggers":
+  [
+    {
+      "characters": ".>:",
+      "selector": "text, source, meta, string, punctuation, constant"
+    }
+  ]
+  ```
