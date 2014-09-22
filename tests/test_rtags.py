@@ -31,25 +31,20 @@ class FooTest(unittest.TestCase):
     wait(self.foo_h_view)
     
   def tearDown(self):
-    self.foo_h_view.close()
+    while self.foo_cxx_view.is_dirty():
+      self.foo_cxx_view.run_command('undo')
     self.foo_cxx_view.close()
+    while self.foo_cxx_view.is_dirty():
+      self.foo_h_view.run_command('undo')
+    self.foo_h_view.close()
 
   def test_goto(self):
-    s = self.foo_cxx_view.sel()
-    tp = self.foo_cxx_view.text_point(19, 20)
-    s.clear()
-    s.add(sublime.Region(tp))
-    self.foo_cxx_view.run_command('rtags_location', {'switch':'-f'})
+    self._action(self.foo_cxx_view, 19, 20, '-f')
     s = self.foo_h_view.sel()
     self.assertEquals(s[0].a, self.foo_h_view.text_point(16, 0))
 
   def test_find_usage(self):
-    tp = self.foo_h_view.text_point(16,12)
-    self.assertFalse(tp == 0)
-    s = self.foo_h_view.sel()
-    s.clear()
-    s.add(sublime.Region(tp))
-    self.foo_h_view.run_command('rtags_location', {'switch':'-r'})
+    self._action(self.foo_h_view, 16, 12, '-r')
     s = self.foo_cxx_view.sel()
     tp = self.foo_cxx_view.text_point(25, 0)
     self.assertEquals(s[0].a, tp)
@@ -80,15 +75,6 @@ class FooTestUnsaved(FooTest):
     wait(self.foo_h_view)
     # insert 4 empty lines
     self.foo_cxx_view.run_command('insert', {'characters': '\n' * 4})
-
-  def tearDown(self):
-    # pass
-    self.foo_cxx_view.run_command('undo')
-    self.foo_h_view.run_command('undo')
-    self.foo_h_view.close()
-    self.foo_cxx_view.close()
-
-
 
 
 
