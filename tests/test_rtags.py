@@ -31,6 +31,8 @@ class FooTest(unittest.TestCase):
     wait(self.foo_h_view)
     
   def tearDown(self):
+    # reindex files!
+    sublime_rtags.run_rc('-V')
     while self.foo_cxx_view.is_dirty():
       self.foo_cxx_view.run_command('undo')
     self.foo_cxx_view.close()
@@ -65,16 +67,24 @@ class FooTest(unittest.TestCase):
         ['method3', 'method1', 'method2', 'method4', 'var1', 'var2', 'var4', 'var5'])
     self.foo_cxx_view.run_command('undo')
 
-class FooTestUnsaved(FooTest):
-  def setUp(self):
-    subprocess.call(['rc', '-c',
-                     'g++', FOO_CXX])
-    self.foo_h_view = sublime.active_window().open_file(FOO_H)
-    self.foo_cxx_view = sublime.active_window().open_file(FOO_CXX)
-    wait(self.foo_cxx_view)
-    wait(self.foo_h_view)
-    # insert 4 empty lines
-    self.foo_cxx_view.run_command('insert', {'characters': '\n' * 4})
-
-
-
+  def test_issue13(self):
+    # insert count newlines at the beginning
+    count = 5
+    self.foo_cxx_view.run_command('insert', {'characters':'\n' * count})
+    self._action(self.foo_cxx_view, 19 + count, 20, '-f')
+    s = self.foo_h_view.sel()
+    self.assertEquals(s[0].a, self.foo_h_view.text_point(16, 0))
+    # ok, now let's undeo
+    self.foo_cxx_view.run_command('undo')
+    self.foo_h_view.sel().clear()
+    # do navigation again
+    self._action(self.foo_cxx_view, 19, 20, '-f')
+    s = self.foo_h_view.sel()
+    self.assertEquals(s[0].a, self.foo_h_view.text_point(16, 0))
+  
+  def _action(self, view, row, col, switch):
+    s = view.sel()
+    tp = view.text_point(row, col)
+    s.clear()
+    s.add(sublime.Region(tp))
+    view.run_command('rtags_location', {'switch':switch})
