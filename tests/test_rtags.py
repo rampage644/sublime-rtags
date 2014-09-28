@@ -8,6 +8,7 @@ import subprocess
 import sys
 import unittest
 import inspect
+import random
 import time
 
 sublime_rtags = sys.modules['sublime-rtags.rtags']
@@ -36,7 +37,7 @@ class FooTest(unittest.TestCase):
     while self.foo_cxx_view.is_dirty():
       self.foo_cxx_view.run_command('undo')
     self.foo_cxx_view.close()
-    while self.foo_cxx_view.is_dirty():
+    while self.foo_h_view.is_dirty():
       self.foo_h_view.run_command('undo')
     self.foo_h_view.close()
 
@@ -67,22 +68,45 @@ class FooTest(unittest.TestCase):
         ['method3', 'method1', 'method2', 'method4', 'var1', 'var2', 'var4', 'var5'])
     self.foo_cxx_view.run_command('undo')
 
-  def test_issue13(self):
-    # insert count newlines at the beginning
-    count = 5
+  def test_goto_unsaved(self):
+    count = random.randint(1,10)
     self.foo_cxx_view.run_command('insert', {'characters':'\n' * count})
     self._action(self.foo_cxx_view, 19 + count, 20, '-f')
+    # looks like sleeping helps with waiting async event
+    time.sleep(0.5)
     s = self.foo_h_view.sel()
     self.assertEquals(s[0].a, self.foo_h_view.text_point(16, 0))
-    # ok, now let's undeo
-    self.foo_cxx_view.run_command('undo')
-    self.foo_h_view.sel().clear()
-    # do navigation again
-    self._action(self.foo_cxx_view, 19, 20, '-f')
-    s = self.foo_h_view.sel()
-    self.assertEquals(s[0].a, self.foo_h_view.text_point(16, 0))
+
+  def test_find_usage_unsaved(self):
+    count = random.randint(1,10)
+    self.foo_h_view.run_command('insert', {'characters':'\n' * count})
+    self._action(self.foo_h_view, 16 + count, 12, '-r')
+    time.sleep(0.5)
+    s = self.foo_cxx_view.sel()
+    tp = self.foo_cxx_view.text_point(25, 0)
+    self.assertEquals(s[0].a, tp)
+
+  # def test_issue13(self):
+  #   # insert count newlines at the beginning
+  #   count = random.randint(1,10)
+  #   self.foo_cxx_view.run_command('insert', {'characters':'\n' * count})
+  #   self._action(self.foo_cxx_view, 19 + count, 20, '-f')
+  #   # wait for some time
+  #   # time.sleep(10)
+  #   # do it again
+  #   # self._action(self.foo_cxx_view, 19 + count, 20, '-f')
+  #   s = self.foo_h_view.sel()
+  #   self.assertEquals(s[0].a, self.foo_h_view.text_point(16, 0))
+  #   # ok, now let's undo
+  #   self.foo_cxx_view.run_command('undo')
+  #   self.foo_h_view.sel().clear()
+  #   # do navigation again
+  #   self._action(self.foo_cxx_view, 19, 20, '-f')
+  #   s = self.foo_h_view.sel()
+  #   self.assertEquals(s[0].a, self.foo_h_view.text_point(16, 0))
   
   def _action(self, view, row, col, switch):
+    sublime.active_window().focus_view(view)
     s = view.sel()
     tp = view.text_point(row, col)
     s.clear()
