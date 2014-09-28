@@ -174,10 +174,10 @@ class RtagsNavigationListener(sublime_plugin.EventListener):
     # run rc --check-reindex to reindex just saved files
     run_rc('-x')
 
-  def post_text_command(self, view, command_name, args):
+  def on_post_text_command(self, view, command_name, args):
     # if view get 'clean' after undo check if we need reindex
     if command_name == 'undo' and not view.is_dirty():
-      run_rc('-x')
+      run_rc('-V')
 
     
 class RtagsCompleteListener(sublime_plugin.EventListener):
