@@ -123,10 +123,15 @@ class RtagsBaseCommand(sublime_plugin.TextCommand):
     # TODO figure out why rdm responds with 'Project loading'
     # for now just repeat query
     if out == b'Project loading\n':
-      out, err = run_rc(switch, None, self._query(*args, **kwargs))
+      def rerun():
+        self.view.run_command('rtags_location',
+          {'switch': switch})
+      sublime.set_timeout(rerun, 100)
+      return
 
     # drop the flag, we are going to navigate
     navigation_helper.flag = NavigationHelper.NAVIGATION_DONE
+    navigation_helper.switch = ''
 
     # pretty format the results
     items = list(map(lambda x: x.decode('utf-8'), out.splitlines()))
