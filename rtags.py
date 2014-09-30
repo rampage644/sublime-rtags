@@ -126,7 +126,7 @@ class RtagsBaseCommand(sublime_plugin.TextCommand):
       def rerun():
         self.view.run_command('rtags_location',
           {'switch': switch})
-      sublime.set_timeout(rerun, 100)
+      sublime.set_timeout(rerun, 500)
       return
 
     # drop the flag, we are going to navigate
