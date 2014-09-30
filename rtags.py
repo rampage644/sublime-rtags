@@ -78,7 +78,8 @@ class RConnectionThread(threading.Thread):
         # OK, we received some chunk
         # check if it is progress update
         if (tree.tag == 'progress' and 
-            tree.attrib['index'] == tree.attrib['total']):
+            tree.attrib['index'] == tree.attrib['total'] and
+            navigation_helper.flag == NavigationHelper.NAVIGATION_REQUESTED):
           # notify about event
           sublime.set_timeout(self.notify, 10)
         buffer = ''
@@ -181,12 +182,12 @@ class RtagsNavigationListener(sublime_plugin.EventListener):
     
   def on_post_save(self, v):
     # run rc --check-reindex to reindex just saved files
-    run_rc('-x')
+    run_rc('-x', None, v.file_name())
 
   def on_post_text_command(self, view, command_name, args):
     # if view get 'clean' after undo check if we need reindex
     if command_name == 'undo' and not view.is_dirty():
-      run_rc('-V')
+      run_rc('-V', None, view.file_name())
 
     
 class RtagsCompleteListener(sublime_plugin.EventListener):
