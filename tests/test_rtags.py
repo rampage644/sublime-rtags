@@ -61,11 +61,11 @@ class FooTest(unittest.TestCase):
     tp = self.foo_cxx_view.text_point(9, len(user_input))
     listen = sublime_rtags.RtagsCompleteListener()
     completions = listen.on_query_completions(self.foo_cxx_view, '', [tp])[0]
-    self.assertEquals(len(completions), 8, msg=str(completions))
+    self.assertEquals(len(completions), 9, msg=str(completions))
     # take only actual var name, chopping '$0'
     completions = [c[:-2] for descr,c in completions]
     self.assertListEqual(completions,
-        ['method3', 'method1', 'method2', 'method4', 'var1', 'var2', 'var4', 'var5'])
+        ['method3', 'method1', 'method2', 'method4', 'var1', 'var2', 'var4', 'var5', 'FooClass'])
     self.foo_cxx_view.run_command('undo')
 
   def test_goto_unsaved(self):
@@ -73,7 +73,7 @@ class FooTest(unittest.TestCase):
     self.foo_cxx_view.run_command('insert', {'characters':'\n' * count})
     self._action(self.foo_cxx_view, 19 + count, 20, '-f')
     # looks like sleeping helps with waiting async event
-    time.sleep(0.5)
+    time.sleep(1)
     s = self.foo_h_view.sel()
     self.assertEquals(s[0].a, self.foo_h_view.text_point(16, 0))
 
@@ -81,7 +81,7 @@ class FooTest(unittest.TestCase):
     count = random.randint(1,10)
     self.foo_h_view.run_command('insert', {'characters':'\n' * count})
     self._action(self.foo_h_view, 16 + count, 12, '-r')
-    time.sleep(0.5)
+    time.sleep(1)
     s = self.foo_cxx_view.sel()
     tp = self.foo_cxx_view.text_point(25, 0)
     self.assertEquals(s[0].a, tp)
