@@ -77,9 +77,9 @@ class RConnectionThread(threading.Thread):
         tree = etree.fromstring(buffer)
         # OK, we received some chunk
         # check if it is progress update
-        if tree.tag == 'progress':
+        if (tree.tag == 'progress' and 
+            tree.attrib['index'] == tree.attrib['total']):
           # notify about event
-          print (tree.tag)
           sublime.set_timeout(self.notify, 10)
         buffer = ''
         start_tag = ''
@@ -98,6 +98,10 @@ def get_view_text(view):
 reg = r'(\S+):(\d+):(\d+):(.*)'
 class RtagsBaseCommand(sublime_plugin.TextCommand):
   def run(self, edit, switch, *args, **kwargs):
+    # do nothing if not C/C++
+    if self.view.scope_name(self.view.sel()[0].a).split()[0] not in ('source.c++',
+                                                 'source.c'):
+      return
     # file should be reindexed only when 
     # 1. file buffer is dirty (modified)
     # 2. there is no pending reindexation (navigation_helper flag)
