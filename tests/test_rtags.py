@@ -86,24 +86,18 @@ class FooTest(unittest.TestCase):
     tp = self.foo_cxx_view.text_point(25, 0)
     self.assertEquals(s[0].a, tp)
 
-  # def test_issue13(self):
-  #   # insert count newlines at the beginning
-  #   count = random.randint(1,10)
-  #   self.foo_cxx_view.run_command('insert', {'characters':'\n' * count})
-  #   self._action(self.foo_cxx_view, 19 + count, 20, '-f')
-  #   # wait for some time
-  #   # time.sleep(10)
-  #   # do it again
-  #   # self._action(self.foo_cxx_view, 19 + count, 20, '-f')
-  #   s = self.foo_h_view.sel()
-  #   self.assertEquals(s[0].a, self.foo_h_view.text_point(16, 0))
-  #   # ok, now let's undo
-  #   self.foo_cxx_view.run_command('undo')
-  #   self.foo_h_view.sel().clear()
-  #   # do navigation again
-  #   self._action(self.foo_cxx_view, 19, 20, '-f')
-  #   s = self.foo_h_view.sel()
-  #   self.assertEquals(s[0].a, self.foo_h_view.text_point(16, 0))
+  def test_issue13(self):
+    # insert count newlines at the beginning
+    count = random.randint(1,10)
+    self.foo_cxx_view.run_command('insert', {'characters':'\n' * count})
+    self._action(self.foo_cxx_view, 19 + count, 20, '-f')
+    # ok, now let's undo
+    sublime.active_window().focus_view(self.foo_cxx_view)
+    self.foo_cxx_view.run_command('undo')
+    # do navigation again
+    self._action(self.foo_cxx_view, 19, 20, '-f')
+    s = self.foo_h_view.sel()
+    self.assertEquals(s[0].a, self.foo_h_view.text_point(16, 0))
   
   def _action(self, view, row, col, switch):
     sublime.active_window().focus_view(view)
