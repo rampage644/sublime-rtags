@@ -44,12 +44,12 @@ class FooTest(unittest.TestCase):
   def test_goto(self):
     self._action(self.foo_cxx_view, 19, 20, '-f')
     s = self.foo_h_view.sel()
-    self.assertEquals(s[0].a, self.foo_h_view.text_point(16, 0))
+    self.assertEquals(s[0].a, self.foo_h_view.text_point(16, 7))
 
   def test_find_usage(self):
     self._action(self.foo_h_view, 16, 12, '-r')
     s = self.foo_cxx_view.sel()
-    tp = self.foo_cxx_view.text_point(25, 0)
+    tp = self.foo_cxx_view.text_point(25, 2)
     self.assertEquals(s[0].a, tp)
 
   def test_complete(self):
@@ -75,7 +75,7 @@ class FooTest(unittest.TestCase):
     # looks like sleeping helps with waiting async event
     time.sleep(1)
     s = self.foo_h_view.sel()
-    self.assertEquals(s[0].a, self.foo_h_view.text_point(16, 0))
+    self.assertEquals(s[0].a, self.foo_h_view.text_point(16, 7))
 
   def test_find_usage_unsaved(self):
     count = random.randint(1,10)
@@ -83,7 +83,7 @@ class FooTest(unittest.TestCase):
     self._action(self.foo_h_view, 16 + count, 12, '-r')
     time.sleep(1)
     s = self.foo_cxx_view.sel()
-    tp = self.foo_cxx_view.text_point(25, 0)
+    tp = self.foo_cxx_view.text_point(25, 2)
     self.assertEquals(s[0].a, tp)
 
   def test_issue13(self):
@@ -97,7 +97,7 @@ class FooTest(unittest.TestCase):
     # do navigation again
     self._action(self.foo_cxx_view, 19, 20, '-f')
     s = self.foo_h_view.sel()
-    self.assertEquals(s[0].a, self.foo_h_view.text_point(16, 0))
+    self.assertEquals(s[0].a, self.foo_h_view.text_point(16, 7))  
   
   def _action(self, view, row, col, switch):
     sublime.active_window().focus_view(view)

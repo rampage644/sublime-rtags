@@ -158,7 +158,8 @@ class RtagsBaseCommand(sublime_plugin.TextCommand):
     if res == -1:
       return
     (file, line, col, _) = re.findall(reg, self.last_references[res])[0]
-    view = self.view.window().open_file('%s:%s' % (file, line), sublime.ENCODED_POSITION)
+    navigation_helper.history.append((file, line, col))
+    view = self.view.window().open_file('%s:%s:%s' % (file, line, col), sublime.ENCODED_POSITION)
 
   def _query(self, *args, **kwargs):
     return ''
