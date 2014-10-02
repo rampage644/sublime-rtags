@@ -24,7 +24,7 @@ def wait(view):
 
 class FooTest(unittest.TestCase):
   def setUp(self):
-    subprocess.call(['rc', '-c',
+    subprocess.call(['/home/ramp/bin/rc', '-c',
                      'g++', FOO_CXX])
     self.foo_h_view = sublime.active_window().open_file(FOO_H)
     self.foo_cxx_view = sublime.active_window().open_file(FOO_CXX)
@@ -97,7 +97,22 @@ class FooTest(unittest.TestCase):
     # do navigation again
     self._action(self.foo_cxx_view, 19, 20, '-f')
     s = self.foo_h_view.sel()
-    self.assertEquals(s[0].a, self.foo_h_view.text_point(16, 7))  
+    self.assertEquals(s[0].a, self.foo_h_view.text_point(16, 7))
+
+  def test_jumping_backward(self):
+    self._action(self.foo_cxx_view, 25, 6, '-f')
+    s = self.foo_cxx_view.sel()
+    self.assertEquals(s[0].a, self.foo_cxx_view.text_point(19, 15))
+    self._action(self.foo_cxx_view, 19, 20, '-f')
+    s = self.foo_h_view.sel()
+    self.assertEquals(s[0].a, self.foo_h_view.text_point(16, 7))
+    # going backward
+    self.foo_h_view.run_command('rtags_go_backward')
+    s = self.foo_cxx_view.sel()
+    self.assertEquals(s[0].a, self.foo_cxx_view.text_point(19, 20))
+    self.foo_cxx_view.run_command('rtags_go_backward')
+    self.assertEquals(s[0].a, self.foo_cxx_view.text_point(25, 6))
+
   
   def _action(self, view, row, col, switch):
     sublime.active_window().focus_view(view)

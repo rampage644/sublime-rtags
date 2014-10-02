@@ -1,8 +1,11 @@
+import collections
 import sublime
 import sublime_plugin
 import subprocess
 import threading
 import re
+
+
 
 import xml.etree.ElementTree as etree
 
@@ -36,6 +39,9 @@ class NavigationHelper(object):
     self.switch = ''
     # file contents that has been passed to reindexer last time
     self.data = ''
+    # history of navigations
+    # elements are tuples (filename, line, col)
+    self.history = collections.deque()
 
 class RConnectionThread(threading.Thread):
   def notify(self):
@@ -127,7 +133,7 @@ class RtagsBaseCommand(sublime_plugin.TextCommand):
       def rerun():
         self.view.run_command('rtags_location',
           {'switch': switch})
-      sublime.set_timeout(rerun, 500)
+      sublime.set_timeout_async(rerun, 500)
       return
 
     # drop the flag, we are going to navigate
@@ -158,11 +164,23 @@ class RtagsBaseCommand(sublime_plugin.TextCommand):
     if res == -1:
       return
     (file, line, col, _) = re.findall(reg, self.last_references[res])[0]
-    navigation_helper.history.append((file, line, col))
+    nrow, ncol = self.view.rowcol(self.view.sel()[0].a)
+    navigation_helper.history.append((self.view.file_name(), nrow+1, ncol+1))
+    print (navigation_helper.history[-1])
     view = self.view.window().open_file('%s:%s:%s' % (file, line, col), sublime.ENCODED_POSITION)
 
   def _query(self, *args, **kwargs):
     return ''
+
+class RtagsGoBackwardCommand(sublime_plugin.TextCommand):
+  def run(self, edit):
+    try:
+      file, line, col = navigation_helper.history.pop()
+      print (file, line, col)
+      view = self.view.window().open_file('%s:%s:%s' % (file, line, col), sublime.ENCODED_POSITION)
+      
+    except IndexError:
+      pass
 
 class RtagsSymbolNameCommand(RtagsBaseCommand):
   def _query(self, *args, **kwargs):

@@ -1,4 +1,5 @@
 [
   {"keys": ["ctrl+shift+u"], "command": "rtags_location", "args": {"switch": "-r"} },
   {"keys": ["f2"], "command": "rtags_location", "args": {"switch": "-f"} },
+  {"keys": ["ctrl+shift+b"], "command": "rtags_go_backward" },
 ]
