@@ -1,7 +1,10 @@
 {
   /* Path to rc utility if not found in $PATH */
-  "rc_path": "/home/ramp/mnt/git/rtags/build/bin/rc",
+  "rc_path": "/home/ramp/bin/rc",
 
   /* Path to rdm daemon if not found in $PATH */
   "rdm_path": "",
+
+  /* max number of jump steps */
+  "jump_limit": 10,
 }
