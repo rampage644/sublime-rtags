@@ -50,6 +50,7 @@ Keybindings inspired by `Qt Creator`.
 + Symbol navigation - `F2`
 + Find usages - `Ctrl+Shift+u`
 + Use `Alt+/` explicitly when you auto-completion
++ Mouse _button8_ to go backwards (mouse wheel left)
 
 # Customization
 
@@ -61,6 +62,7 @@ Customize your own keybindings via "Preferences - Package Settings - SublimeRtag
 [
   {"keys": ["ctrl+shift+u"], "command": "rtags_location", "args": {"switch": "-r"} },
   {"keys": ["f2"], "command": "rtags_location", "args": {"switch": "-f"} },
+  {"keys": ["ctrl+shift+b"], "command": "rtags_go_backward" },
 ]
 ```
 
@@ -75,6 +77,9 @@ Customize settings via "Preferences - Package Settings - SublimeRtags - Settings
 
   /* Path to rdm daemon if not found in $PATH */
   "rdm_path": "",
+
+  /* Max number of jump steps */
+  "jump_limit": 10,
 }
 ```
 
