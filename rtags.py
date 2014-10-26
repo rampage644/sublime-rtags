@@ -174,7 +174,8 @@ class RtagsBaseCommand(sublime_plugin.TextCommand):
         nrow, ncol = self.view.rowcol(self.view.sel()[0].a)
         navigation_helper.history.append(
             (self.view.file_name(), nrow + 1, ncol + 1))
-        print(navigation_helper.history[-1])
+        if len(navigation_helper.history) > int(settings.get('jump_limit', 10)):
+            navigation_helper.history.popleft()
         view = self.view.window().open_file(
             '%s:%s:%s' % (file, line, col), sublime.ENCODED_POSITION)
 
@@ -187,10 +188,8 @@ class RtagsGoBackwardCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         try:
             file, line, col = navigation_helper.history.pop()
-            print(file, line, col)
             view = self.view.window().open_file(
                 '%s:%s:%s' % (file, line, col), sublime.ENCODED_POSITION)
-
         except IndexError:
             pass
 

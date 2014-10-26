@@ -108,13 +108,39 @@ class FooTest(unittest.TestCase):
         self.assertEquals(s[0].a, self.foo_cxx_view.text_point(19, 15))
         self._action(self.foo_cxx_view, 19, 20, '-f')
         s = self.foo_h_view.sel()
-        self.assertEquals(s[0].a, self.foo_h_view.text_point(16, 7))
         # going backward
+        self.assertEquals(s[0].a, self.foo_h_view.text_point(16, 7))
         self.foo_h_view.run_command('rtags_go_backward')
         s = self.foo_cxx_view.sel()
         self.assertEquals(s[0].a, self.foo_cxx_view.text_point(19, 20))
         self.foo_cxx_view.run_command('rtags_go_backward')
         self.assertEquals(s[0].a, self.foo_cxx_view.text_point(25, 6))
+
+    def test_go_backward_limit(self):
+        # 10 is default jump_limit
+        # do navigation more than limit
+        for i in range(11):
+            self._action(self.foo_cxx_view, 19, 15, '-f')
+            s = self.foo_h_view.sel()
+            self.assertEquals(s[0].a, self.foo_h_view.text_point(16, 7))
+            self._action(self.foo_h_view, 16, 7, '-f')
+            s = self.foo_cxx_view.sel()
+            self.assertEquals(s[0].a, self.foo_cxx_view.text_point(19, 15))
+        # go backward, should go only limit times
+        for i in range(10):
+            self.foo_cxx_view.run_command('rtags_go_backward')
+            s = self.foo_h_view.sel()
+            self.assertEquals(s[0].a, self.foo_h_view.text_point(16, 7))
+            self.foo_h_view.run_command('rtags_go_backward')
+            s = self.foo_cxx_view.sel()
+            self.assertEquals(s[0].a, self.foo_cxx_view.text_point(19, 15))
+        # try to go backward again
+        self.foo_cxx_view.run_command('rtags_go_backward')
+        # should go anywhere
+        self.assertNotEqual(sublime.active_window().active_view(),
+                            self.foo_h_view)
+
+
 
     def _action(self, view, row, col, switch):
         sublime.active_window().focus_view(view)
