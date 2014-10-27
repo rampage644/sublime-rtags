@@ -97,8 +97,9 @@ class RConnectionThread(threading.Thread):
         self.p = None
 
     def stop(self):
-        self.p.kill()
-        self.p = None
+        if self.is_alive():
+            self.p.kill()
+            self.p = None
 
 
 def get_view_text(view):
