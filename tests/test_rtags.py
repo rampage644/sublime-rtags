@@ -94,13 +94,14 @@ class FooTest(unittest.TestCase):
         count = random.randint(1, 10)
         self.foo_cxx_view.run_command('insert', {'characters': '\n' * count})
         self._action(self.foo_cxx_view, 19 + count, 20, '-f')
+        s = self.foo_h_view.sel()
         # ok, now let's undo
         sublime.active_window().focus_view(self.foo_cxx_view)
         self.foo_cxx_view.run_command('undo')
         # do navigation again
-        self._action(self.foo_cxx_view, 19, 20, '-f')
-        s = self.foo_h_view.sel()
-        self.assertEquals(s[0].a, self.foo_h_view.text_point(16, 7))
+        self._action(self.foo_cxx_view, 2, 13, '-f')
+        wait(self.foo_h_view)
+        self.assertEquals(s[0].a, self.foo_h_view.text_point(6, 2))
 
     def test_jumping_backward(self):
         self._action(self.foo_cxx_view, 25, 6, '-f')
