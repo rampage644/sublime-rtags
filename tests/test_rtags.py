@@ -143,10 +143,10 @@ class FooTest(unittest.TestCase):
 
 
 
-    def _action(self, view, row, col, switch):
+    def _action(self, view, row, col, switch, command='rtags_location'):
         sublime.active_window().focus_view(view)
         s = view.sel()
         tp = view.text_point(row, col)
         s.clear()
         s.add(sublime.Region(tp))
-        view.run_command('rtags_location', {'switch': switch})
+        view.run_command(command, {'switch': switch})
