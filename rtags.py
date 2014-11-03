@@ -147,22 +147,7 @@ class RtagsBaseCommand(sublime_plugin.TextCommand):
         navigation_helper.flag = NavigationHelper.NAVIGATION_DONE
         navigation_helper.switch = ''
 
-        # pretty format the results
-        items = list(map(lambda x: x.decode('utf-8'), out.splitlines()))
-        self.last_references = items
-
-        def out_to_items(item):
-            (file, line, _, usage) = re.findall(reg, item)[0]
-            return [usage.strip(), "{}:{}".format(file.split('/')[-1], line)]
-        items = list(map(out_to_items, items))
-
-        # if there is only one result no need to show it to user
-        # just do navigation directly
-        if len(items) == 1:
-            self.on_select(0)
-            return
-        # else show all available options
-        self.view.window().show_quick_panel(items, self.on_select)
+        self._action(out, err)
 
     def _reindex(self, filename):
         run_rc('-V', get_view_text(self.view), filename,
@@ -183,6 +168,23 @@ class RtagsBaseCommand(sublime_plugin.TextCommand):
     def _query(self, *args, **kwargs):
         return ''
 
+    def _action(self, stdout, stderr):
+        # pretty format the results
+        items = list(map(lambda x: x.decode('utf-8'), stdout.splitlines()))
+        self.last_references = items
+
+        def out_to_items(item):
+            (file, line, _, usage) = re.findall(reg, item)[0]
+            return [usage.strip(), "{}:{}".format(file.split('/')[-1], line)]
+        items = list(map(out_to_items, items))
+
+        # if there is only one result no need to show it to user
+        # just do navigation directly
+        if len(items) == 1:
+            self.on_select(0)
+            return
+        # else show all available options
+        self.view.window().show_quick_panel(items, self.on_select)
 
 class RtagsGoBackwardCommand(sublime_plugin.TextCommand):
 
@@ -208,6 +210,15 @@ class RtagsLocationCommand(RtagsBaseCommand):
         return '{}:{}:{}'.format(self.view.file_name(),
                                  row + 1, col + 1)
 
+class RtagsCursorCommand(RtagsLocationCommand):
+    panel_name = 'cursor'
+    def _action(self, out, err):
+        text = out.decode()
+        if not text:
+            return
+        panel = self.view.window().create_output_panel(self.panel_name)
+        self.view.window().run_command("show_panel", {"panel": "output." + self.panel_name})
+        panel.run_command('output_panel_insert', {'characters': text})
 
 class RtagsNavigationListener(sublime_plugin.EventListener):
     # def on_modified(self, view):
