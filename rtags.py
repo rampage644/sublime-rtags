@@ -165,6 +165,15 @@ class RtagsBaseCommand(sublime_plugin.TextCommand):
         view = self.view.window().open_file(
             '%s:%s:%s' % (file, line, col), sublime.ENCODED_POSITION)
 
+    def on_highlight(self, res):
+        if res == -1:
+                    return
+        (file, line, col, _) = re.findall(reg, self.last_references[res])[0]
+        nrow, ncol = self.view.rowcol(self.view.sel()[0].a)
+        view = self.view.window().open_file(
+            '%s:%s:%s' % (file, line, col), sublime.ENCODED_POSITION | sublime.TRANSIENT)
+
+
     def _query(self, *args, **kwargs):
         return ''
 
@@ -184,7 +193,9 @@ class RtagsBaseCommand(sublime_plugin.TextCommand):
             self.on_select(0)
             return
         # else show all available options
-        self.view.window().show_quick_panel(items, self.on_select)
+        self.view.window().show_quick_panel(
+            items, self.on_select, sublime.MONOSPACE_FONT, -1, self.on_highlight)
+
 
 class RtagsGoBackwardCommand(sublime_plugin.TextCommand):
 
