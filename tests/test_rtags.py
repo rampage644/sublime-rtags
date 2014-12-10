@@ -141,6 +141,9 @@ class FooTest(unittest.TestCase):
         self.assertNotEqual(sublime.active_window().active_view(),
                             self.foo_h_view)
 
+    def test_multiple_options(self):
+        self.assertTrue(False)
+
 
 
     def _action(self, view, row, col, switch, command='rtags_location'):
