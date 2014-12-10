@@ -167,12 +167,11 @@ class RtagsBaseCommand(sublime_plugin.TextCommand):
 
     def on_highlight(self, res):
         if res == -1:
-                    return
+            return
         (file, line, col, _) = re.findall(reg, self.last_references[res])[0]
         nrow, ncol = self.view.rowcol(self.view.sel()[0].a)
         view = self.view.window().open_file(
             '%s:%s:%s' % (file, line, col), sublime.ENCODED_POSITION | sublime.TRANSIENT)
-
 
     def _query(self, *args, **kwargs):
         return ''
@@ -221,15 +220,19 @@ class RtagsLocationCommand(RtagsBaseCommand):
         return '{}:{}:{}'.format(self.view.file_name(),
                                  row + 1, col + 1)
 
+
 class RtagsCursorCommand(RtagsLocationCommand):
     panel_name = 'cursor'
+
     def _action(self, out, err):
         text = out.decode()
         if not text:
             return
         panel = self.view.window().create_output_panel(self.panel_name)
-        self.view.window().run_command("show_panel", {"panel": "output." + self.panel_name})
+        self.view.window().run_command(
+            "show_panel", {"panel": "output." + self.panel_name})
         panel.run_command('output_panel_insert', {'characters': text})
+
 
 class RtagsNavigationListener(sublime_plugin.EventListener):
     # def on_modified(self, view):
