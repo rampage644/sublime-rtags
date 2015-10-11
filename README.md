@@ -60,8 +60,8 @@ Customize your own keybindings via "Preferences - Package Settings - SublimeRtag
 
 ```
 [
-  {"keys": ["ctrl+shift+u"], "command": "rtags_location", "args": {"switch": "-r"} },
-  {"keys": ["f2"], "command": "rtags_location", "args": {"switch": "-f"} },
+  {"keys": ["ctrl+shift+u"], "command": "rtags_location", "args": {"switches": ["--absolute-path", "-r"]} },
+  {"keys": ["f2"], "command": "rtags_location", "args": {"switches": ["--absolute-path", "-f"]} },
   {"keys": ["ctrl+shift+b"], "command": "rtags_go_backward" },
 ]
 ```
