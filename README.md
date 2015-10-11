@@ -80,6 +80,9 @@ Customize settings via "Preferences - Package Settings - SublimeRtags - Settings
 
   /* Max number of jump steps */
   "jump_limit": 10,
+
+  /* Supported source file types */
+  "file_types": ["source.c", "source.c++", "source.c++.11"],
 }
 ```
 

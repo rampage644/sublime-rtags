@@ -112,9 +112,8 @@ reg = r'(\S+):(\d+):(\d+):(.*)'
 class RtagsBaseCommand(sublime_plugin.TextCommand):
 
     def run(self, edit, switch, *args, **kwargs):
-        # do nothing if not C/C++
-        if self.view.scope_name(self.view.sel()[0].a).split()[0] not in ('source.c++',
-                                                                         'source.c'):
+        # do nothing if not called from supported code
+        if not supported_file_type(self.view):
             return
         # file should be reindexed only when
         # 1. file buffer is dirty (modified)
@@ -241,10 +240,16 @@ class RtagsNavigationListener(sublime_plugin.EventListener):
     #     navigation_helper.flag =
 
     def on_post_save(self, v):
+        # do nothing if not called from supported code
+        if not supported_file_type(v):
+            return
         # run rc --check-reindex to reindex just saved files
         run_rc('-x', None, v.file_name())
 
     def on_post_text_command(self, view, command_name, args):
+        # do nothing if not called from supported code
+        if not supported_file_type(view):
+            return
         # if view get 'clean' after undo check if we need reindex
         if command_name == 'undo' and not view.is_dirty():
             run_rc('-V', None, view.file_name())
@@ -265,9 +270,9 @@ class RtagsCompleteListener(sublime_plugin.EventListener):
         # libcland does auto-complete _only_ at whitespace and punctuation chars
         # so "rewind" location to that character
         location = location[0] - len(prefix)
-        # do noting if called from not C/C++ code
-        if v.scope_name(location).split()[0] not in ('source.c++',
-                                                     'source.c'):
+
+        # do nothing if not called from supported code
+        if not supported_file_type(v):
             return []
         # We launch rc utility with both filename:line:col and filename:length
         # because we're using modified file which is passed via stdin (see --unsaved-file
@@ -297,6 +302,13 @@ class RtagsCompleteListener(sublime_plugin.EventListener):
 
         # inhibit every possible auto-completion
         return sugs, sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS
+
+
+def supported_file_type(view):
+    if settings == None:
+        return False
+    file_types = settings.get('file_types', ["source.c", "source.c++"])
+    return view.scope_name(view.sel()[0].a).split()[0] in file_types
 
 
 def update_settings():
