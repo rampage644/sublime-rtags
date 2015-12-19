@@ -14,11 +14,8 @@ settings = None
 RC_PATH = ''
 
 
-def run_rc(switch, input=None, *args):
-    p = subprocess.Popen([RC_PATH,
-                          '--silent-query',
-                          switch,
-                          ] + list(args),
+def run_rc(switches, input=None, *args):
+    p = subprocess.Popen([RC_PATH, '--silent-query'] + switches + list(args),
                          stderr=subprocess.PIPE,
                          stdout=subprocess.PIPE,
                          stdin=subprocess.PIPE)
@@ -37,8 +34,8 @@ class NavigationHelper(object):
         # - NAVIGATION_REQUESTED
         # - NAVIGATION_DONE
         self.flag = NavigationHelper.NAVIGATION_DONE
-        # rc utility switch to use for callback
-        self.switch = ''
+        # rc utility switches to use for callback
+        self.switches = []
         # file contents that has been passed to reindexer last time
         self.data = ''
         # history of navigations
@@ -50,7 +47,7 @@ class RConnectionThread(threading.Thread):
 
     def notify(self):
         sublime.active_window().active_view().run_command('rtags_location',
-                                                          {'switch': navigation_helper.switch})
+                                                          {'switches': navigation_helper.switches})
 
     def run(self):
         self.p = subprocess.Popen([RC_PATH, '-m', '--silent-query'],
@@ -111,7 +108,7 @@ reg = r'(\S+):(\d+):(\d+):(.*)'
 
 class RtagsBaseCommand(sublime_plugin.TextCommand):
 
-    def run(self, edit, switch, *args, **kwargs):
+    def run(self, edit, switches, *args, **kwargs):
         # do nothing if not called from supported code
         if not supported_file_type(self.view):
             return
@@ -124,32 +121,31 @@ class RtagsBaseCommand(sublime_plugin.TextCommand):
         if (navigation_helper.flag == NavigationHelper.NAVIGATION_DONE and
                 self.view.is_dirty() and
                 navigation_helper.data != get_view_text(self.view)):
-            navigation_helper.switch = switch
+            navigation_helper.switches = switches
             navigation_helper.data = get_view_text(self.view)
             navigation_helper.flag = NavigationHelper.NAVIGATION_REQUESTED
             self._reindex(self.view.file_name())
             # never go further
             return
 
-        out, err = run_rc(switch, None, self._query(*args, **kwargs))
+        out, err = run_rc(switches, None, self._query(*args, **kwargs))
         # dirty hack
         # TODO figure out why rdm responds with 'Project loading'
         # for now just repeat query
         if out == b'Project loading\n':
             def rerun():
-                self.view.run_command('rtags_location',
-                                      {'switch': switch})
+                self.view.run_command('rtags_location', {'switches': switches})
             sublime.set_timeout_async(rerun, 500)
             return
 
         # drop the flag, we are going to navigate
         navigation_helper.flag = NavigationHelper.NAVIGATION_DONE
-        navigation_helper.switch = ''
+        navigation_helper.switches = []
 
         self._action(out, err)
 
     def _reindex(self, filename):
-        run_rc('-V', get_view_text(self.view), filename,
+        run_rc(['-V'], get_view_text(self.view), filename,
                '--unsaved-file', '{}:{}'.format(filename, self.view.size()))
 
     def on_select(self, res):
@@ -244,7 +240,7 @@ class RtagsNavigationListener(sublime_plugin.EventListener):
         if not supported_file_type(v):
             return
         # run rc --check-reindex to reindex just saved files
-        run_rc('-x', None, v.file_name())
+        run_rc(['-x'], None, v.file_name())
 
     def on_post_text_command(self, view, command_name, args):
         # do nothing if not called from supported code
@@ -252,7 +248,7 @@ class RtagsNavigationListener(sublime_plugin.EventListener):
             return
         # if view get 'clean' after undo check if we need reindex
         if command_name == 'undo' and not view.is_dirty():
-            run_rc('-V', None, view.file_name())
+            run_rc(['-V'], None, view.file_name())
 
 
 class RtagsCompleteListener(sublime_plugin.EventListener):
@@ -265,7 +261,7 @@ class RtagsCompleteListener(sublime_plugin.EventListener):
                                  row + 1, col + 1)
 
     def on_query_completions(self, v, prefix, location):
-        switch = '-l'  # rc's auto-complete switch
+        switches = ['-l']  # rc's auto-complete switch
         self.view = v
         # libcland does auto-complete _only_ at whitespace and punctuation chars
         # so "rewind" location to that character
@@ -277,7 +273,7 @@ class RtagsCompleteListener(sublime_plugin.EventListener):
         # We launch rc utility with both filename:line:col and filename:length
         # because we're using modified file which is passed via stdin (see --unsaved-file
         # switch)
-        out, err = run_rc(switch, get_view_text(self.view),
+        out, err = run_rc(switches, get_view_text(self.view),
                           self._query(location),
                           '--unsaved-file',
                           # filename:length
