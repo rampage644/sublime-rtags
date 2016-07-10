@@ -15,7 +15,7 @@ RC_PATH = ''
 
 
 def run_rc(switches, input=None, *args):
-    p = subprocess.Popen([RC_PATH, '--silent-query'] + switches + list(args),
+    p = subprocess.Popen([RC_PATH] + switches + list(args),
                          stderr=subprocess.PIPE,
                          stdout=subprocess.PIPE,
                          stdin=subprocess.PIPE)
