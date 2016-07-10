@@ -215,6 +215,34 @@ class RtagsLocationCommand(RtagsBaseCommand):
         return '{}:{}:{}'.format(self.view.file_name(),
                                  row + 1, col + 1)
 
+class RtagsSymbolInfoCommand(RtagsLocationCommand):
+    panel_name = 'cursor'
+    inforeg = r'(\S+):\s*(.+)'
+
+    def filter_items(self, item):
+        return re.match(inforeg, item)
+
+    def _action(self, out, err):
+        items = list(map(lambda x: x.decode('utf-8'), out.splitlines()))
+        items = list(filter(self.filter_items, items))
+
+        def out_to_items(item):
+            (title, info) = re.findall(inforeg, item)[0]
+            return [info.strip(), title.strip()]
+
+        def out_file_to_items(item):
+            (file, line, _, usage) = re.findall(reg, item)[0]
+            return [usage.strip(), "{}:{}".format(file.split('/')[-1], line)]
+
+        items = list(map(out_to_items, items))
+        self.last_references = items
+
+        self.view.window().show_quick_panel(
+            items,
+            None,
+            sublime.MONOSPACE_FONT,
+            -1,
+            None)
 
 class RtagsCursorCommand(RtagsLocationCommand):
     panel_name = 'cursor'
