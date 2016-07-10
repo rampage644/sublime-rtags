@@ -215,6 +215,7 @@ class RtagsLocationCommand(RtagsBaseCommand):
         return '{}:{}:{}'.format(self.view.file_name(),
                                  row + 1, col + 1)
 
+
 class RtagsSymbolInfoCommand(RtagsLocationCommand):
     panel_name = 'cursor'
     inforeg = r'(\S+):\s*(.+)'
@@ -243,18 +244,6 @@ class RtagsSymbolInfoCommand(RtagsLocationCommand):
             sublime.MONOSPACE_FONT,
             -1,
             None)
-
-class RtagsCursorCommand(RtagsLocationCommand):
-    panel_name = 'cursor'
-
-    def _action(self, out, err):
-        text = out.decode()
-        if not text:
-            return
-        panel = self.view.window().create_output_panel(self.panel_name)
-        self.view.window().run_command(
-            "show_panel", {"panel": "output." + self.panel_name})
-        panel.run_command('output_panel_insert', {'characters': text})
 
 
 class RtagsNavigationListener(sublime_plugin.EventListener):
