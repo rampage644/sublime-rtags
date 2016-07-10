@@ -1,6 +1,6 @@
 [
-  {"keys": ["ctrl+shift+u"], "command": "rtags_location", "args": {"switch": "-r"} },
-  {"keys": ["ctrl+shift+i"], "command": "rtags_cursor", "args": {"switch": "-U"} },
-  {"keys": ["f2"], "command": "rtags_location", "args": {"switch": "-f"} },
+  {"keys": ["ctrl+shift+u"], "command": "rtags_location", "args": {"switches": ["--absolute-path", "-r"]} },
+  {"keys": ["ctrl+shift+i"], "command": "rtags_symbol_info", "args": {"switches": ["--absolute-path", "--symbol-info"]} },
+  {"keys": ["f2"], "command": "rtags_location", "args": {"switches": ["--absolute-path", "-f"]} },
   {"keys": ["ctrl+shift+b"], "command": "rtags_go_backward" },
 ]
