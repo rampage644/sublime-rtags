@@ -11,7 +11,6 @@ Make sure you Install `rtags`:
     cd rtags
     mkdir build && cd build && cmake ..
     make install
-    
 
 ### Via Package Control
 
@@ -22,12 +21,13 @@ Make sure you Install `rtags`:
 ### Manually
 
     cd <sublime-text-Packages-dir>
-    git clone https://github.com/rampage644/sublime-rtags  
+    git clone https://github.com/rampage644/sublime-rtags
 
 # Features
 
 * Symbol navigation (Goto definition/declaration)
-* Find usages (Find symbol references)
+* Find usages (Find symbol references, Find virtual function re-implementations)
+* Symbol information
 * Code completion
 
 # Usage
@@ -49,19 +49,21 @@ Keybindings inspired by `Qt Creator`.
 
 + Symbol navigation - `F2`
 + Find usages - `Ctrl+Shift+u`
++ Find virtual function re-implementations - `Ctrl+Shift+x`
 + Symbol information - `Ctrl+Shift+i`
-+ Use `Alt+/` explicitly when you auto-completion
++ Use `Alt+/` explicitly for auto-completion
 + Mouse _button8_ to go backwards (mouse wheel left)
 
 # Customization
 
-### Keybindings 
+### Keybindings
 
 Customize your own keybindings via "Preferences - Package Settings - SublimeRtags - Key Bindings - User"
 
 ```
 [
   {"keys": ["ctrl+shift+u"], "command": "rtags_location", "args": {"switches": ["--absolute-path", "-r"]} },
+  {"keys": ["ctrl+shift+x"], "command": "rtags_location", "args": {"switches": ["--absolute-path", "-k", "-r"]} },
   {"keys": ["ctrl+shift+i"], "command": "rtags_symbol_info", "args": {"switches": ["--absolute-path", "--symbol-info"]} },
   {"keys": ["f2"], "command": "rtags_location", "args": {"switches": ["--absolute-path", "-f"]} },
   {"keys": ["ctrl+shift+b"], "command": "rtags_go_backward" },
