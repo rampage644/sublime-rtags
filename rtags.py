@@ -15,7 +15,7 @@ RC_PATH = ''
 
 
 def run_rc(switches, input=None, *args):
-    p = subprocess.Popen([RC_PATH, '--silent-query'] + switches + list(args),
+    p = subprocess.Popen([RC_PATH] + switches + list(args),
                          stderr=subprocess.PIPE,
                          stdout=subprocess.PIPE,
                          stdin=subprocess.PIPE)
@@ -216,17 +216,34 @@ class RtagsLocationCommand(RtagsBaseCommand):
                                  row + 1, col + 1)
 
 
-class RtagsCursorCommand(RtagsLocationCommand):
+class RtagsSymbolInfoCommand(RtagsLocationCommand):
     panel_name = 'cursor'
+    inforeg = r'(\S+):\s*(.+)'
+
+    def filter_items(self, item):
+        return re.match(inforeg, item)
 
     def _action(self, out, err):
-        text = out.decode()
-        if not text:
-            return
-        panel = self.view.window().create_output_panel(self.panel_name)
-        self.view.window().run_command(
-            "show_panel", {"panel": "output." + self.panel_name})
-        panel.run_command('output_panel_insert', {'characters': text})
+        items = list(map(lambda x: x.decode('utf-8'), out.splitlines()))
+        items = list(filter(self.filter_items, items))
+
+        def out_to_items(item):
+            (title, info) = re.findall(inforeg, item)[0]
+            return [info.strip(), title.strip()]
+
+        def out_file_to_items(item):
+            (file, line, _, usage) = re.findall(reg, item)[0]
+            return [usage.strip(), "{}:{}".format(file.split('/')[-1], line)]
+
+        items = list(map(out_to_items, items))
+        self.last_references = items
+
+        self.view.window().show_quick_panel(
+            items,
+            None,
+            sublime.MONOSPACE_FONT,
+            -1,
+            None)
 
 
 class RtagsNavigationListener(sublime_plugin.EventListener):
