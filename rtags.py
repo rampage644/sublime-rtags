@@ -171,7 +171,23 @@ class RtagsBaseCommand(sublime_plugin.TextCommand):
     def _query(self, *args, **kwargs):
         return ''
 
+    def _validate(self, stdout, stderr):
+        if stdout != b'Not indexed\n':
+            return True
+
+        self.view.window().show_quick_panel(
+            ["Not indexed"],
+            None,
+            sublime.MONOSPACE_FONT,
+            -1,
+            None)
+
+        return False
+
     def _action(self, stdout, stderr):
+        if not self._validate(stdout, stderr):
+            return
+
         # pretty format the results
         items = list(map(lambda x: x.decode('utf-8'), stdout.splitlines()))
         self.last_references = items
@@ -224,6 +240,9 @@ class RtagsSymbolInfoCommand(RtagsLocationCommand):
         return re.match(self.inforeg, item)
 
     def _action(self, out, err):
+        if not self._validate(out, err):
+            return
+
         items = list(map(lambda x: x.decode('utf-8'), out.splitlines()))
         items = list(filter(self.filter_items, items))
 
