@@ -221,14 +221,14 @@ class RtagsSymbolInfoCommand(RtagsLocationCommand):
     inforeg = r'(\S+):\s*(.+)'
 
     def filter_items(self, item):
-        return re.match(inforeg, item)
+        return re.match(self.inforeg, item)
 
     def _action(self, out, err):
         items = list(map(lambda x: x.decode('utf-8'), out.splitlines()))
         items = list(filter(self.filter_items, items))
 
         def out_to_items(item):
-            (title, info) = re.findall(inforeg, item)[0]
+            (title, info) = re.findall(self.inforeg, item)[0]
             return [info.strip(), title.strip()]
 
         def out_file_to_items(item):
