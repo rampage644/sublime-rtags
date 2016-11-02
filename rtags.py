@@ -20,7 +20,7 @@ def run_rc(switches, input=None, *args):
                          stdout=subprocess.PIPE,
                          stdin=subprocess.PIPE)
     print(' '.join(p.args))
-    return p.communicate(input=input)
+    return p.communicate(input=input, timeout=.5)
 
 # TODO refactor somehow to remove global vars
 
