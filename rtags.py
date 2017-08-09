@@ -15,12 +15,16 @@ RC_PATH = ''
 
 
 def run_rc(switches, input=None, *args):
+    timeout = 0.5
+    if settings != None:
+        timeout = settings.get('rc_timeout', timeout)
+
     p = subprocess.Popen([RC_PATH] + switches + list(args),
                          stderr=subprocess.PIPE,
                          stdout=subprocess.PIPE,
                          stdin=subprocess.PIPE)
     print(' '.join(p.args))
-    return p.communicate(input=input, timeout=.5)
+    return p.communicate(input=input, timeout=timeout)
 
 # TODO refactor somehow to remove global vars
 

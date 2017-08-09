@@ -79,6 +79,9 @@ Customize settings via "Preferences - Package Settings - SublimeRtags - Settings
   /* Path to rc utility if not found in $PATH */
   "rc_path": "/home/ramp/mnt/git/rtags/build/bin/rc",
 
+  /* Seconds for rc utility communication timeout default */
+  "rc_timeout": 0.5,
+
   /* Path to rdm daemon if not found in $PATH */
   "rdm_path": "",
 
